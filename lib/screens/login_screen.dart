@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import 'register_screen.dart';
+import 'home_screen.dart'; // ⬅️ tambahkan ini
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -24,7 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    // Cek kalau email / password kosong dulu
+    // cek kosong dulu
     if (_emailController.text.trim().isEmpty ||
         _passwordController.text.trim().isEmpty) {
       setState(() {
@@ -39,12 +40,19 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      // login ke Firebase
       await AuthService.loginWithEmail(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      // Tidak perlu push ke HomeScreen di sini,
-      // main.dart sudah pakai FirebaseAuth.instance.authStateChanges()
+
+      // ✅ kalau berhasil, langsung pindah ke HomeScreen
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false, // hapus semua route sebelumnya (termasuk Login)
+      );
     } on FirebaseAuthException catch (e) {
       String message = "Login gagal.";
 
@@ -67,13 +75,9 @@ class _LoginScreenState extends State<LoginScreen> {
           break;
       }
 
-      setState(() {
-        _error = message;
-      });
+      setState(() => _error = message);
     } catch (e) {
-      setState(() {
-        _error = "Terjadi kesalahan: $e";
-      });
+      setState(() => _error = "Terjadi kesalahan: $e");
     } finally {
       if (!mounted) return;
       setState(() {
